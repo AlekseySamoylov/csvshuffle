@@ -7,41 +7,57 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"reflect"
 	"strings"
 )
+
+// var delim byte = '\r'
+var delim byte = '\n'
+var delimString = "\n"
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	println("Type filename and press Enter")
 	fileName, _ := reader.ReadString('\n')
-	fileName = strings.Replace(fileName, "\n", "", -1)
+	fileName = strings.Replace(fileName, delimString, "", -1)
 	wordPairs := ReadCsv(fileName)
-	println("Type Q to exit or press ENTER to go to the next word")
+	println("Type Q to exit or S to shuffle or press ENTER to go to the next word")
 
 	for {
-		checkForTheExit(reader)
-		russian, english := Shuffle(wordPairs)
-		println(russian)
-		checkForTheExit(reader)
-		println(english)
-		println("--------------")
+		for idx := 0; idx < len(wordPairs); idx++ {
+			line := wordPairs[idx]
+			words := line.elements
+			for subIdx := 0; subIdx < len(words); subIdx++ {
+				println(words[subIdx])
+				if checkForTheExit(reader) {
+					println("SHUFFLE")
+					rand.Shuffle(len(wordPairs), func(i, j int) { wordPairs[i], wordPairs[j] = wordPairs[j], wordPairs[i] })
+					println(wordPairs[0].elements[0])
+					idx = 0
+					subIdx = 0
+					continue
+				}
+			}
+			println("--------------")
+		}
+		println("NEXT ROUND")
 	}
 
 }
 
-func Shuffle(wordPairs map[string]string) (string, string) {
-
-	if wordPairs == nil || len(wordPairs) == 0 {
-		return "пустой список", "empty list"
-	}
-	keys := reflect.ValueOf(wordPairs).MapKeys()
-	randomKey := keys[rand.Intn(len(keys))].String()
-
-	return randomKey, wordPairs[randomKey]
+type Line struct {
+	elements []string
 }
 
-func ReadCsv(fileName string) map[string]string {
+func Shuffle(lines []Line) Line {
+
+	if lines == nil || len(lines) == 0 {
+		return Line{[]string{"пустой список | empty list"}}
+	}
+
+	return lines[rand.Intn(len(lines))]
+}
+
+func ReadCsv(fileName string) []Line {
 	csvfile, err := os.Open(fileName)
 	if err != nil {
 		err = nil
@@ -52,7 +68,7 @@ func ReadCsv(fileName string) map[string]string {
 	}
 
 	r := csv.NewReader(csvfile)
-	wordsMap := make(map[string]string)
+	var words []Line
 	for {
 		// Read each record from csv
 		record, err := r.Read()
@@ -62,17 +78,18 @@ func ReadCsv(fileName string) map[string]string {
 		if err != nil {
 			log.Fatal(err)
 		}
-		wordsMap[record[0]] = record[1]
+		words = append(words, Line{record})
 	}
-	return wordsMap
+	return words
 }
 
-func checkForTheExit(reader *bufio.Reader) {
-	text, _ := reader.ReadString('\n')
+func checkForTheExit(reader *bufio.Reader) bool {
+	text, _ := reader.ReadString(delim)
 	// convert CRLF to LF
-	text = strings.Replace(text, "\n", "", -1)
+	text = strings.Replace(text, delimString, "", -1)
 	if strings.Compare("q", text) == 0 || strings.Compare("Q", text) == 0 {
 		println("See you...")
 		os.Exit(0)
 	}
+	return strings.Compare("s", text) == 0 || strings.Compare("S", text) == 0
 }

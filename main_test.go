@@ -3,13 +3,13 @@ package main
 import "testing"
 
 var testCases = []struct {
-	wordPairs map[string]string
+	lines []Line
 }{
 	{
-		map[string]string{"с утра до вечера": "all day long", "так же, как и …": "as well as"},
+		[]Line{Line{[]string{"с утра до вечера", "all day long"}}, Line{[]string{"так же, как и …", "as well as"}}},
 	},
 	{
-		map[string]string{},
+		[]Line{},
 	},
 	{
 		nil,
@@ -20,10 +20,10 @@ func TestShuffle(t *testing.T) {
 	// Given
 	for _, testCase := range testCases {
 		// WhenR
-		russian, english := Shuffle(testCase.wordPairs)
+		line := Shuffle(testCase.lines)
 
-		if (testCase.wordPairs[russian] != english && russian != "пустой список") || russian == "" {
-			t.Errorf("Test failed input: A = %s , results = %s == %s", testCase.wordPairs, english, russian)
+		if len(line.elements) == 0 || line.elements[0] == "" {
+			t.Errorf("Test failed input: A = %s , results = %s == %s", testCase.lines, line.elements[0], line.elements[1])
 		}
 	}
 }
